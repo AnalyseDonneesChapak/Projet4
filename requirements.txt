@@ -1,2 +1,4 @@
 pillow
 pytesseract
+matplotlib
+sklearn
