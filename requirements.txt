@@ -2,3 +2,5 @@ pillow
 pytesseract
 matplotlib
 sklearn
+tensorflow
+keras
