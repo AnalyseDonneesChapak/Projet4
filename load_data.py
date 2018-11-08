@@ -24,11 +24,10 @@ for i in range(10):
         Y.append(i)
 
 
-
-
 X = np.array(X)  # Array de matrices des pixels en niveaux de gris
 Y = np.array(Y)  # Array des "solutions" de l'index corrspondant dans X
 
+assert len(X) == len(Y)
 
 np.savez_compressed("TRAINING", X=X, Y=Y)
 
