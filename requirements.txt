@@ -1,6 +1,5 @@
 pillow
-pytesseract
 matplotlib
-sklearn
+numpy
 tensorflow
 keras
