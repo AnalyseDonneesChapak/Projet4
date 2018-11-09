@@ -8,14 +8,17 @@ from keras.utils import np_utils
 from keras.models import model_from_json
 from keras.datasets import mnist
 
+from numpy_vectors import load_data
+
+
 class KerasMNIST:
     def __init__(self):
         X_train, Y_train, X_test, Y_test = self.get_data()
 
         self.model = self.get_model()
-        score = round(self.model.evaluate(X_test, Y_test, verbose=1)[1] * 100, 4)
+        # score = round(self.model.evaluate(X_test, Y_test, verbose=1)[1] * 100, 4)
 
-        print(f"Loaded model with score {score}%")
+        # print(f"Loaded model with score {score}%")
 
     def get_data(self):
         # 4. Load pre-shuffled MNIST data into train and test sets
@@ -109,9 +112,14 @@ class KerasMNIST:
         return model
 
     def predict(self, image: np.array) -> str:
-
+        #i = np.expand_dims(image, axis=0)
+        #i = np.expand_dims(i, axis=4)
+        #return self.model.predict(i)
         return ''
 
 
 if __name__ == '__main__':
-    KerasMNIST()
+    k = KerasMNIST()
+    i = load_data.load_image("dataset/testing/0/0001.png")
+    print(k.predict(i))
+
