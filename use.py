@@ -121,5 +121,7 @@ class KerasMNIST:
 if __name__ == '__main__':
     k = KerasMNIST()
     i = load_data.load_image("dataset/testing/0/0001.png")
-    print(k.predict(i))
+    r = k.predict(i)
+    print(r)
+    assert r == '0'
 
