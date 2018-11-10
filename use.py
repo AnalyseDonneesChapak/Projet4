@@ -112,16 +112,16 @@ class KerasMNIST:
         return model
 
     def predict(self, image: np.array) -> str:
-        #i = np.expand_dims(image, axis=0)
-        #i = np.expand_dims(i, axis=4)
-        #return self.model.predict(i)
-        return ''
+        i = np.expand_dims(image, axis=0)
+        i = np.expand_dims(i, axis=4)
+        r:np.ndarray = self.model.predict(i)
+        r_list:list = r.tolist()
+        return str(r_list[0].index(1))
 
 
 if __name__ == '__main__':
     k = KerasMNIST()
     i = load_data.load_image("dataset/testing/0/0001.png")
     r = k.predict(i)
-    print(r)
     assert r == '0'
 
