@@ -127,45 +127,34 @@ class KerasMNIST:
         return str(r_list[0].index(max(r_list[0])))
 
 
-class ScikitLearnMNIST():
+class ScikitLearnMNIST:
     def __init__(self):
-        digits = datasets.load_digits()
         self.model = self.get_model()
 
     def _save_to_file(self, model):
-        # 11a. Serialize model to JSON
-        model_scikit = model.to_json()
-        with open("Scikitlearn/model.json", "w") as scikit_file:
-            scikit_file.write(model_scikit)
-
-        # 11b. Serialize weights to HDF5
-        model.save_weights("Scikitlearn/model.h5")
+        pass
 
     # Create a classifier: a support vector classifier
-    def _get_from_file(self):
+    def _get_from_compile(self):
         digits = datasets.load_digits()
         classifier = svm.SVC(gamma=0.001)
         n_samples = len(digits.images)
         data = digits.images.reshape((n_samples, -1))
         # We learn the digits on the first half of the digits
         classifier.fit(data[:n_samples // 2], digits.target[:n_samples // 2])
+        return classifier
 
-        # Now predict the value of the digit on the second half:
-        expected = digits.target[n_samples // 2:]
-        predicted = classifier.predict(data[n_samples // 2:])
+    def get_model(self):
 
-        print("accuracy score:\n%s" % metrics.accuracy_score(expected, predicted))
+        model = self._get_from_compile()
+        print("Loaded model from compile")
 
-    def get_model(self) -> Sequential:
-        try:
-            model = self._get_from_file()
-            print("Loaded model from file")
-        except FileNotFoundError as e:
-            print(f"Couldn't load model from file with error {e}, compiling and saving model")
-            model = self._get_from_compile()
-            self._save_to_file(model)
 
         return model
+
+    def predict(self, image):
+        model = self.model
+        return model.predict(image)
 
 
 class RandomMNIST:
