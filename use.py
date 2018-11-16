@@ -1,24 +1,26 @@
+import random
+
 import numpy as np
 np.random.seed(123)  # for reproducibility
 
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten
+from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Convolution2D, MaxPooling2D
-from keras.utils import np_utils
 from keras.models import model_from_json
 from keras.datasets import mnist
 
 from sklearn import datasets, svm, metrics
 import matplotlib.pyplot as plt
+from numpy_vectors import load_data
 
 class KerasMNIST:
     def __init__(self):
         X_train, Y_train, X_test, Y_test = self.get_data()
 
         self.model = self.get_model()
-        score = round(self.model.evaluate(X_test, Y_test, verbose=1)[1] * 100, 4)
+        # score = round(self.model.evaluate(X_test, Y_test, verbose=1)[1] * 100, 4)
 
-        print(f"Loaded model with score {score}%")
+        # print(f"Loaded model with score {score}%")
 
     def get_data(self):
         # 4. Load pre-shuffled MNIST data into train and test sets
@@ -112,9 +114,13 @@ class KerasMNIST:
         return model
 
     def predict(self, image: np.array) -> str:
+        i = np.expand_dims(image, axis=0)
+        i = np.expand_dims(i, axis=4)
+        r:np.ndarray = self.model.predict(i)
+        r_list:list = r.tolist()
+        return str(r_list[0].index(1))
 
-        return ''
-    
+
 class ScikitlearnMNIST():
     def __init__(self):
         digits=datasets.load_digits()
@@ -152,8 +158,24 @@ class ScikitlearnMNIST():
             print(f"Couldn't load model from file with error {e}, compiling and saving model")
             model = self._get_from_compile()
             self._save_to_file(model)
-
-        return model
-if __name__ == '__main__':
-    ScikitlearnMNIST()
     
+        return model
+
+class RandomMNIST:
+    def __init__(self):
+        pass
+
+    def get_data(self):
+        pass
+
+    def get_model(self) -> Sequential:
+        pass
+
+    def predict(self, image: np.array) -> str:
+        return str(random.randint(0, 9))
+
+if __name__ == '__main__':
+    k = KerasMNIST()
+    i = load_data.load_image("dataset/testing/0/0001.png")
+    r = k.predict(i)
+    assert r == '0'

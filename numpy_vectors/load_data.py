@@ -14,21 +14,22 @@ def load_image(infilename):
     data = np.asarray(img, dtype="int32")
     return data
 
+if __name__ == '__main__':
 
-for i in range(10):
-    folder = f"{DATASET_DIRECTORY}/{i}/"
+    for i in range(10):
+        folder = f"{DATASET_DIRECTORY}/{i}/"
 
-    for image_file in os.listdir(folder):
-        print(f"{folder}/{image_file}")
-        X.append(load_image(f"{folder}/{image_file}"))
-        Y.append(i)
+        for image_file in os.listdir(folder):
+            print(f"{folder}/{image_file}")
+            X.append(load_image(f"{folder}/{image_file}"))
+            Y.append(i)
 
 
-X = np.array(X)  # Array de matrices des pixels en niveaux de gris
-Y = np.array(Y)  # Array des "solutions" de l'index corrspondant dans X
+    X = np.array(X)  # Array de matrices des pixels en niveaux de gris
+    Y = np.array(Y)  # Array des "solutions" de l'index corrspondant dans X
 
-assert len(X) == len(Y)
+    assert len(X) == len(Y)
 
-np.savez_compressed("TRAINING", X=X, Y=Y)
+    np.savez_compressed("TRAINING", X=X, Y=Y)
 
-# Pour load, np.load("TRAINING")
+    # Pour load, np.load("TRAINING")
