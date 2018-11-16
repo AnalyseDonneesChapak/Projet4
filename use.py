@@ -1,6 +1,7 @@
 import random
 
 import numpy as np
+
 np.random.seed(123)  # for reproducibility
 
 from keras.models import Sequential
@@ -8,6 +9,9 @@ from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.models import model_from_json
 from keras.datasets import mnist
+
+from os import listdir
+from os.path import isfile, join
 
 from numpy_vectors import load_data
 
@@ -115,10 +119,9 @@ class KerasMNIST:
     def predict(self, image: np.array) -> str:
         i = np.expand_dims(image, axis=0)
         i = np.expand_dims(i, axis=4)
-        r:np.ndarray = self.model.predict(i)
-        r_list:list = r.tolist()
-        return str(r_list[0].index(1))
-
+        r: np.ndarray = self.model.predict(i)
+        r_list: list = r.tolist()
+        return str(r_list[0].index(max(r_list[0])))
 
 
 class RandomMNIST:
@@ -134,12 +137,27 @@ class RandomMNIST:
     def predict(self, image: np.array) -> str:
         return str(random.randint(0, 9))
 
+
 if __name__ == '__main__':
-    k = KerasMNIST()
-    i = load_data.load_image("dataset/testing/0/0001.png")
-    r = k.predict(i)
-    assert r == '0'
+    classifiers = [
+        KerasMNIST(),
+        RandomMNIST(),
+    ]
 
+    total_tests = 0
+    answers = {c: 0 for c in classifiers}
+    for i in range(10):
+        FOLDER = f"dataset/testing/{i}/"
+        print(i)
 
+        for image_file in [f for f in listdir(FOLDER) if isfile(join(FOLDER, f))]:
+            total_tests += 1
+            print(image_file)
+            image = load_data.load_image(f"{FOLDER}/{image_file}")
+            for classifier in classifiers:
+                r = int(classifier.predict(image))
+                answers[classifier] += int(r == i)
 
-
+                print(f"{type(classifier).__name__} > good={r == i}")
+    for classifier, good in answers.items():
+        print(f"{type(classifier).__name__} > Gave {good} good answers out of {total_tests} answers. ({good/total_tests*100} %)")
