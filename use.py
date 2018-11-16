@@ -1,10 +1,11 @@
+import random
+
 import numpy as np
 np.random.seed(123)  # for reproducibility
 
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten
+from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Convolution2D, MaxPooling2D
-from keras.utils import np_utils
 from keras.models import model_from_json
 from keras.datasets import mnist
 
@@ -119,9 +120,26 @@ class KerasMNIST:
         return str(r_list[0].index(1))
 
 
+
+class RandomMNIST:
+    def __init__(self):
+        pass
+
+    def get_data(self):
+        pass
+
+    def get_model(self) -> Sequential:
+        pass
+
+    def predict(self, image: np.array) -> str:
+        return str(random.randint(0, 9))
+
 if __name__ == '__main__':
     k = KerasMNIST()
     i = load_data.load_image("dataset/testing/0/0001.png")
     r = k.predict(i)
     assert r == '0'
+
+
+
 
