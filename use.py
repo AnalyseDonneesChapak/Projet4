@@ -8,6 +8,9 @@ from keras.utils import np_utils
 from keras.models import model_from_json
 from keras.datasets import mnist
 
+from sklearn import datasets, svm, metrics
+import matplotlib.pyplot as plt
+
 class KerasMNIST:
     def __init__(self):
         X_train, Y_train, X_test, Y_test = self.get_data()
@@ -59,9 +62,9 @@ class KerasMNIST:
 
     def _save_to_file(self, model):
         # 11a. Serialize model to JSON
-        model_json = model.to_json()
+        model_scikit = model.to_scikit()
         with open("keras/model.json", "w") as json_file:
-            json_file.write(model_json)
+            json_file.write(model_scikit)
 
         # 11b. Serialize weights to HDF5
         model.save_weights("keras/model.h5")
@@ -111,7 +114,46 @@ class KerasMNIST:
     def predict(self, image: np.array) -> str:
 
         return ''
+    
+class ScikitlearnMNIST():
+    def __init__(self):
+        digits=datasets.load_digits()
+        self.model=self.get_model()
+    
+    def _save_to_file(self, model):
+        # 11a. Serialize model to JSON
+        model_scikit = model.to_json()
+        with open("Scikitlearn/model.json", "w") as scikit_file:
+            scikit_file.write(model_scikit)
 
+        # 11b. Serialize weights to HDF5
+        model.save_weights("Scikitlearn/model.h5")
 
+        
+    # Create a classifier: a support vector classifier
+    def _get_from_file(self):
+        digits=datasets.load_digits()
+        classifier = svm.SVC(gamma=0.001)
+        n_samples = len(digits.images)
+        data =digits.images.reshape((n_samples, -1))
+        # We learn the digits on the first half of the digits
+        classifier.fit(data[:n_samples // 2],digits.target[:n_samples // 2])
+        
+        # Now predict the value of the digit on the second half:
+        expected = digits.target[n_samples // 2:]
+        predicted = classifier.predict(data[n_samples // 2:])
+        
+        print("accuracy score:\n%s" % metrics.accuracy_score(expected, predicted))
+    def get_model(self) -> Sequential:
+        try:
+            model = self._get_from_file()
+            print("Loaded model from file")
+        except FileNotFoundError as e:
+            print(f"Couldn't load model from file with error {e}, compiling and saving model")
+            model = self._get_from_compile()
+            self._save_to_file(model)
+
+        return model
 if __name__ == '__main__':
-    KerasMNIST()
+    ScikitlearnMNIST()
+    
