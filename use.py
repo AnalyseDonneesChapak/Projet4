@@ -126,10 +126,11 @@ class KerasMNIST:
         r_list: list = r.tolist()
         return str(r_list[0].index(max(r_list[0])))
 
-class ScikitlearnMNIST():
+
+class ScikitLearnMNIST():
     def __init__(self):
-        digits=datasets.load_digits()
-        self.model=self.get_model()
+        digits = datasets.load_digits()
+        self.model = self.get_model()
 
     def _save_to_file(self, model):
         # 11a. Serialize model to JSON
@@ -140,21 +141,21 @@ class ScikitlearnMNIST():
         # 11b. Serialize weights to HDF5
         model.save_weights("Scikitlearn/model.h5")
 
-
     # Create a classifier: a support vector classifier
     def _get_from_file(self):
-        digits=datasets.load_digits()
+        digits = datasets.load_digits()
         classifier = svm.SVC(gamma=0.001)
         n_samples = len(digits.images)
-        data =digits.images.reshape((n_samples, -1))
+        data = digits.images.reshape((n_samples, -1))
         # We learn the digits on the first half of the digits
-        classifier.fit(data[:n_samples // 2],digits.target[:n_samples // 2])
+        classifier.fit(data[:n_samples // 2], digits.target[:n_samples // 2])
 
         # Now predict the value of the digit on the second half:
         expected = digits.target[n_samples // 2:]
         predicted = classifier.predict(data[n_samples // 2:])
 
         print("accuracy score:\n%s" % metrics.accuracy_score(expected, predicted))
+
     def get_model(self) -> Sequential:
         try:
             model = self._get_from_file()
@@ -165,6 +166,7 @@ class ScikitlearnMNIST():
             self._save_to_file(model)
 
         return model
+
 
 class RandomMNIST:
     def __init__(self):
@@ -185,7 +187,6 @@ if __name__ == '__main__':
         KerasMNIST(),
         ScikitLearnMNIST(),
         RandomMNIST(),
-
     ]
 
     total_tests = 0
@@ -204,4 +205,5 @@ if __name__ == '__main__':
 
                 print(f"{type(classifier).__name__} > good={r == i}")
     for classifier, good in answers.items():
-        print(f"{type(classifier).__name__} > Gave {good} good answers out of {total_tests} answers. ({good/total_tests*100} %)")
+        print(
+            f"{type(classifier).__name__} > Gave {good} good answers out of {total_tests} answers. ({good/total_tests*100} %)")
