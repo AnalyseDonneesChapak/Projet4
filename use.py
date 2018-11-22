@@ -13,8 +13,7 @@ from keras.datasets import mnist
 from os import listdir
 from os.path import isfile, join
 
-from sklearn import datasets, svm, metrics
-import matplotlib.pyplot as plt
+from sklearn import datasets, svm
 
 from numpy_vectors import load_data
 
@@ -171,11 +170,13 @@ class RandomMNIST:
         return str(random.randint(0, 9))
 
 
+
 if __name__ == '__main__':
     classifiers = [
         KerasMNIST(),
-        ScikitLearnMNIST(),
+        #ScikitLearnMNIST(),
         RandomMNIST(),
+
     ]
 
     total_tests = 0
@@ -186,13 +187,15 @@ if __name__ == '__main__':
 
         for image_file in [f for f in listdir(FOLDER) if isfile(join(FOLDER, f))]:
             total_tests += 1
-            print(image_file)
+            print(f"{i}/{image_file}")
             image = load_data.load_image(f"{FOLDER}/{image_file}")
             for classifier in classifiers:
-                r = int(classifier.predict(image))
+                if type(classifier).__name__ == "TesseractMNIST":
+                    r = int(classifier.predict(f"{FOLDER}/{image_file}"))
+                else:
+                    r = int(classifier.predict(image))
                 answers[classifier] += int(r == i)
 
-                print(f"{type(classifier).__name__} > good={r == i}")
+                print(f"{type(classifier).__name__} > good={r == i} (r={r}, i={i})")
     for classifier, good in answers.items():
-        print(
-            f"{type(classifier).__name__} > Gave {good} good answers out of {total_tests} answers. ({good/total_tests*100} %)")
+        print(f"{type(classifier).__name__} > Gave {good} good answers out of {total_tests} answers. ({good/total_tests*100} %)")
