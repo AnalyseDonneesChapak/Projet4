@@ -196,10 +196,7 @@ if __name__ == '__main__':
             print(f"{i}/{image_file}")
             image = load_data.load_image(f"{FOLDER}/{image_file}")
             for classifier in classifiers:
-                if type(classifier).__name__ == "TesseractMNIST":
-                    r = int(classifier.predict(f"{FOLDER}/{image_file}"))
-                else:
-                    r = int(classifier.predict(image))
+                r = int(classifier.predict(image))
                 answers[classifier] += int(r == i)
 
                 print(f"{type(classifier).__name__} > good={r == i} (r={r}, i={i})")
