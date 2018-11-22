@@ -15,10 +15,10 @@ from os.path import isfile, join
 
 from sklearn import datasets, svm, metrics
 import matplotlib.pyplot as plt
-
+from skimage.transform import resize
 from numpy_vectors import load_data
-
-
+import PIL
+from PIL import Image
 class KerasMNIST:
     def __init__(self):
         X_train, Y_train, X_test, Y_test = self.get_data()
@@ -124,6 +124,7 @@ class KerasMNIST:
         i = np.expand_dims(i, axis=4)
         r: np.ndarray = self.model.predict(i)
         r_list: list = r.tolist()
+        plt.plot(self.model.predict)
         return str(r_list[0].index(max(r_list[0])))
 
 
@@ -145,7 +146,6 @@ class ScikitLearnMNIST:
         return classifier
 
     def get_model(self):
-
         model = self._get_from_compile()
         print("Loaded model from compile")
 
@@ -154,7 +154,13 @@ class ScikitLearnMNIST:
 
     def predict(self, image):
         model = self.model
-        return model.predict(image)
+        print(model)
+        img=image
+        #print(type(img))
+        res = resize(img,(64, 64))
+        plt.plot(model.predict(res))
+        print(max(model.predict(res)))
+        return max(model.predict(res)) # load_digits prend des iamges 8*8 , nos images sont 28*28
 
 
 class RandomMNIST:
@@ -173,9 +179,9 @@ class RandomMNIST:
 
 if __name__ == '__main__':
     classifiers = [
-        KerasMNIST(),
+        #KerasMNIST(),
         ScikitLearnMNIST(),
-        RandomMNIST(),
+        #RandomMNIST(),
     ]
 
     total_tests = 0
