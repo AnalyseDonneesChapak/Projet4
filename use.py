@@ -35,7 +35,7 @@ class KerasMNIST:
         from keras.utils import np_utils
 
         (X_train, y_train), (X_test, y_test) = mnist.load_data()
-
+        print(X_test[1])
         # 5. Preprocess input data
         X_train = X_train.reshape(X_train.shape[0], 28, 28, 1)
         X_test = X_test.reshape(X_test.shape[0], 28, 28, 1)
@@ -140,7 +140,8 @@ class ScikitLearnMNIST:
     # Create a classifier: a support vector classifier
     def _get_from_compile(self):
         digits = datasets.load_digits()
-        classifier = svm.SVC(gamma=0.001)
+        classifier = svm.SVC(gamma='auto')
+        #C=1.0, kernel=’rbf’, degree=3, gamma=’auto_deprecated’, coef0=0.0, shrinking=True, probability=False, tol=0.001, cache_size=200, class_weight=None, verbose=False, max_iter=-1, decision_function_shape=’ovr’, random_state=None
         n_samples = len(digits.images)
         data = digits.images.reshape((n_samples, -1))
         # We learn the digits on the first half of the digits
@@ -149,16 +150,13 @@ class ScikitLearnMNIST:
 
     def get_model(self):
         model = self._get_from_compile()
-        print("Loaded model from compile")
-
-
         return model
 
     def predict(self, image):
         model = self.model
-        print(model)
         img=image
-        #print(type(img))
+        print(img.X.shape[1])
+        print(img.Y.shape[1])
         res = resize(img,(64, 64))
         plt.plot(model.predict(res))
         print(max(model.predict(res)))
@@ -184,7 +182,7 @@ if __name__ == '__main__':
     classifiers = [
         KerasMNIST(),
         ScikitLearnMNIST(),
-        RandomMNIST(),
+        #RandomMNIST(),
 
     ]
 
@@ -192,11 +190,8 @@ if __name__ == '__main__':
     answers = {c: 0 for c in classifiers}
     for i in range(10):
         FOLDER = f"dataset/testing/{i}/"
-        print(i)
-
         for image_file in [f for f in listdir(FOLDER) if isfile(join(FOLDER, f))]:
             total_tests += 1
-            print(f"{i}/{image_file}")
             image = load_data.load_image(f"{FOLDER}/{image_file}")
             for classifier in classifiers:
                 if type(classifier).__name__ == "TesseractMNIST":
@@ -204,7 +199,5 @@ if __name__ == '__main__':
                 else:
                     r = int(classifier.predict(image))
                 answers[classifier] += int(r == i)
-
-                print(f"{type(classifier).__name__} > good={r == i} (r={r}, i={i})")
     for classifier, good in answers.items():
         print(f"{type(classifier).__name__} > Gave {good} good answers out of {total_tests} answers. ({good/total_tests*100} %)")
