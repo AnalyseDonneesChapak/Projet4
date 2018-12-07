@@ -13,19 +13,18 @@ from keras.datasets import mnist
 from os import listdir
 from os.path import isfile, join
 
-
 from sklearn import datasets, svm, metrics
 from skimage.transform import resize
 from numpy_vectors import load_data
+from sklearn.datasets import fetch_mldata
+from skimage.color import gray2rgb, rgb2gray, label2rgb  # since the code wants color images
+
 
 import shap
 
 class KerasMNIST:
     def __init__(self):
-        X_train, Y_train, X_test, Y_test = self.get_data()
-
         self.model = self.get_model()
-        # score = round(self.model.evaluate(X_test, Y_test, verbose=1)[1] * 100, 4)
 
         # print(f"Loaded model with score {score}%")
 
@@ -146,6 +145,114 @@ class KerasMNIST:
         return True
 
 
+class KerasMNISTLimeExplainer(KerasMNIST):
+    def __init__(self):
+        super().__init__()
+        # self.model = self.get_model()
+
+    def get_data(self):
+        from sklearn.model_selection import train_test_split
+        mnist = fetch_mldata('MNIST original')
+        # make each image color so lime_image works correctly
+        X_vec = np.stack([gray2rgb(iimg) for iimg in mnist.data.reshape((-1, 28, 28))], 0)
+        y_vec = mnist.target.astype(np.uint8)
+
+        X_train, X_test, y_train, y_test = train_test_split(X_vec, y_vec, train_size=0.55)
+
+        return X_train, X_test, y_train, y_test
+
+    def _get_from_file(self):
+        raise FileNotFoundError()
+
+    def _save_to_file(self, model):
+        pass
+
+    def _get_from_compile(self):
+        from sklearn.pipeline import Pipeline
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.preprocessing import Normalizer
+
+        class PipeStep(object):
+            """
+            Wrapper for turning functions into pipeline transforms (no-fitting)
+            """
+
+            def __init__(self, step_func):
+                self._step_func = step_func
+
+            def fit(self, *args):
+                return self
+
+            def transform(self, X):
+                return self._step_func(X)
+
+        makegray_step = PipeStep(lambda img_list: [rgb2gray(img) for img in img_list])
+        flatten_step = PipeStep(lambda img_list: [img.ravel() for img in img_list])
+
+        simple_rf_pipeline = Pipeline([
+            ('Make Gray', makegray_step),
+            ('Flatten Image', flatten_step),
+            # ('Normalize', Normalizer()),
+            # ('PCA', PCA(16)),
+            ('RF', RandomForestClassifier())
+        ])
+
+        X_train, X_test, y_train, y_test = self.get_data()
+
+        simple_rf_pipeline.fit(X_train, y_train)
+
+        return simple_rf_pipeline
+
+    def predict(self, image):
+        from lime import lime_image
+        from lime.wrappers.scikit_image import SegmentationAlgorithm
+
+        from matplotlib import pyplot as plt
+
+        X_train, X_test, y_train, y_test = self.get_data()
+
+        i = gray2rgb(image)
+        i2 = X_test[0]
+
+        r = 5
+
+
+        explainer = lime_image.LimeImageExplainer(verbose=False)
+        segmenter = SegmentationAlgorithm('quickshift', kernel_size=1, max_dist=200, ratio=0.2)
+        explanation = explainer.explain_instance(i,
+                                                 classifier_fn=self.model.predict_proba,
+                                                 top_labels=10, hide_color=0, num_samples=10000,
+                                                 segmentation_fn=segmenter)
+
+        temp, mask = explanation.get_image_and_mask(r, positive_only=True, num_features=10, hide_rest=False,
+                                                    min_weight=0.01)
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
+        ax1.imshow(label2rgb(mask, temp, bg_label=0), interpolation='nearest')
+        ax1.set_title('Positive Regions for {}'.format(r))
+        temp, mask = explanation.get_image_and_mask(r, positive_only=False, num_features=10, hide_rest=False,
+                                                    min_weight=0.01)
+        ax2.imshow(label2rgb(3 - mask, temp, bg_label=0), interpolation='nearest')
+        ax2.set_title('Positive/Negative Regions for {}'.format(r))
+
+        plt.show()
+
+        # now show them for each class
+        fig, m_axs = plt.subplots(2, 5, figsize=(12, 6))
+        for i_, c_ax in enumerate(m_axs.flatten()):
+            temp, mask = explanation.get_image_and_mask(i, positive_only=True, num_features=1000, hide_rest=False,
+                                                        min_weight=0.01)
+            c_ax.imshow(label2rgb(mask, i, bg_label=0), interpolation='nearest')
+            c_ax.set_title('Positive for {}\nActual {}'.format(i_, r))
+            c_ax.axis('off')
+
+        plt.show()
+
+        return 5
+
+
+
+
+
 class ScikitLearnMNIST:
     def __init__(self):
         self.model = self.get_model()
@@ -202,6 +309,8 @@ if __name__ == '__main__':
         KerasMNIST(),
         ScikitLearnMNIST(),
         RandomMNIST(),
+
+        KerasMNISTLimeExplainer()
     ]
 
     total_tests = 0
