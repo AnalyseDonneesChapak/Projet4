@@ -5,7 +5,8 @@ from keras.models import Sequential  ##Model sequentiel : composé de plusieurs 
 from keras.layers import Dense, Dropout, Flatten #dropout: definit de manière aléatoire le taux de fraction d'unité d'entrée
 from keras.layers import Conv2D, MaxPooling2D
 from keras import backend as K
-
+import shap
+import numpy as np
 batch_size = 128
 num_classes = 10
 epochs = 2
@@ -15,7 +16,7 @@ img_rows, img_cols = 28, 28
 
 # the data, split between train and test sets
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
-
+print( x_train[np.random.choice(x_train.shape[0], 100, replace=False)])
 if K.image_data_format() == 'channels_first':
     x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
     x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
@@ -63,8 +64,6 @@ print('Test loss:', score[0])
 print('Test accuracy:', score[1])
 
 ####
-import shap
-import numpy as np
 
 # select a set of background examples to take an expectation over
 background = x_train[np.random.choice(x_train.shape[0], 100, replace=False)]

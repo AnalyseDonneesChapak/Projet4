@@ -18,7 +18,7 @@ from sklearn import datasets, svm, metrics
 from skimage.transform import resize
 from numpy_vectors import load_data
 
-
+import shap
 
 class KerasMNIST:
     def __init__(self):
@@ -128,6 +128,23 @@ class KerasMNIST:
         # plt.plot(self.model.predict)
         return str(r_list[0].index(max(r_list[0])))
 
+    def explain(self, image):
+        X_train, Y_train, X_test, Y_test = self.get_data()
+
+        # select a set of background examples to take an expectation over
+        # i = np.expand_dims(image, axis=0)
+        # i = np.expand_dims(i, axis=4)
+        #
+        # background = i
+        # explain prediction on the model
+        background = X_train[np.random.choice(X_train.shape[0], 100, replace=False)]
+        image = image.reshape(1,28,28,1)
+        e = shap.DeepExplainer(self.model, background)
+        shap_values = e.shap_values(image)
+        #plot the feature attributions
+        shap.image_plot(shap_values, -image)
+        return True
+
 
 class ScikitLearnMNIST:
     def __init__(self):
@@ -178,11 +195,13 @@ class RandomMNIST:
 
 
 if __name__ == '__main__':
+
+    e = KerasMNIST()
+    e.explain(load_data.load_image("dataset/training/9/0001.png"), )
     classifiers = [
         KerasMNIST(),
         ScikitLearnMNIST(),
         RandomMNIST(),
-
     ]
 
     total_tests = 0
