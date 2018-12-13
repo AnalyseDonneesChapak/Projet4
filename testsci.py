@@ -129,7 +129,6 @@ if __name__ == "__main__":
 
     X_train, X_test, y_train, y_test = Load_Data(order=args["order"])
     print("")
-    print(X_test.shape) #10000/784
     print("")
     print("Dataset statistics:")
     print("===================")
@@ -181,11 +180,15 @@ if __name__ == "__main__":
               "".format(name, train_time[name], test_time[name], error[name]))
 
     print()
-FOLDER = f"dataset/testing/5/"
+    
+FOLDER = f"dataset/testing/6/"
 for image_file in [f for f in listdir(FOLDER) if isfile(join(FOLDER, f))]:
-    print(f"5/{image_file}")
+    print(f"6/{image_file}")
     image = load_data.load_image(f"{FOLDER}/{image_file}")
-    image=image.reshape(-1,784)
+    Image=image.reshape(1,784) 
+    Image=Image/255
     plt.imshow(image)
-    r = int(estimator.predict(image))#► entrainer avec 10000 image en 784
-    print("predict >"+ str(r))
+    plt.show()
+    r = estimator.predict(Image)#► entrainer avec 10000 image en 784
+    print("predict >")
+    print(r)
