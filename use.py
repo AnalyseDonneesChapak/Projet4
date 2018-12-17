@@ -1,10 +1,12 @@
 import random
 import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import Normalizer
+
 np.random.seed(123)  # for reproducibility
 import matplotlib.pyplot as plt
 import argparse
 import shap
-
 
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
@@ -37,12 +39,16 @@ class PipeStep(object):
     """
     Wrapper for turning functions into pipeline transforms (no-fitting)
     """
+
     def __init__(self, step_func):
-        self._step_func=step_func
-    def fit(self,*args):
+        self._step_func = step_func
+
+    def fit(self, *args):
         return self
-    def transform(self,X):
+
+    def transform(self, X):
         return self._step_func(X)
+
 
 class KerasMNIST:
     def __init__(self):
@@ -151,7 +157,6 @@ class KerasMNIST:
 
     def explain(self, image, save_to=None):
 
-
         # select a set of background examples to take an expectation over
         # i = np.expand_dims(image, axis=0)
         # i = np.expand_dims(i, axis=4)
@@ -166,7 +171,7 @@ class KerasMNIST:
         image = image.reshape(1, 28, 28, 1)
 
         shap_values = e.shap_values(image)
-        #plot the feature attributions
+        # plot the feature attributions
         plt.close('all')
         shap.image_plot(shap_values, -image, show=False)
         if save_to:
@@ -248,7 +253,6 @@ class KerasMNISTLimeExplainer(KerasMNIST):
 
         r = 5
 
-
         explainer = lime_image.LimeImageExplainer(verbose=False)
         segmenter = SegmentationAlgorithm('quickshift', kernel_size=1, max_dist=200, ratio=0.2)
         explanation = explainer.explain_instance(i,
@@ -285,6 +289,7 @@ class KerasMNISTLimeExplainer(KerasMNIST):
 class ScikitLearnMNIST:
     def __init__(self):
         self.model = self.get_model()
+
     def ESTIM(self):
         ESTIMATORS = {
             "dummy": DummyClassifier(),
@@ -292,7 +297,7 @@ class ScikitLearnMNIST:
             'ExtraTrees': ExtraTreesClassifier(n_estimators=100),
             'RandomForest': RandomForestClassifier(n_estimators=100),
             'Nystroem-SVM': make_pipeline(
-                Nystroem(gamma=0.015, n_components=1000), SVC(C=100,kernel='linear',probability=True)),
+                Nystroem(gamma=0.015, n_components=1000), SVC(C=100, kernel='linear', probability=True)),
             'SampledRBF-SVM': make_pipeline(
                 RBFSampler(gamma=0.015, n_components=1000), LinearSVC(C=100)),
             'LogisticRegression-SAG': LogisticRegression(solver='sag', tol=1e-1,
@@ -309,7 +314,8 @@ class ScikitLearnMNIST:
                 tol=1e-4, random_state=1)
         }
         return ESTIMATORS
-    def get_data(self,dtype=np.float32, order='F'):
+
+    def get_data(self, dtype=np.float32, order='F'):
         """Load the data, then cache and memmap the train/test split"""
         ######################################################################
         # Load dataset
@@ -331,16 +337,18 @@ class ScikitLearnMNIST:
 
     def _save_to_file(self, model):
         # 11a. Serialize model to JSON
-        joblib.dump(model,"scikit/model.joblib.pk1",)
+        joblib.dump(model, "scikit/model.joblib.pk1", )
         print("saved")
+
     def _get_from_file(self):
         # 1. Load json and create model
-        model=joblib.load("scikit/model.joblib.pk1")
+        model = joblib.load("scikit/model.joblib.pk1")
         return model
+
     # Create a classifier: a support vector classifier
     def _get_from_compile(self):
-        #___-Chargement du calssifeirs et des parametres-___#
-        ESTIMATORS=self.ESTIM()
+        # ___-Chargement du calssifeirs et des parametres-___#
+        ESTIMATORS = self.ESTIM()
         parser = argparse.ArgumentParser()
         parser.add_argument('--classifiers', nargs="+",
                             choices=ESTIMATORS, type=str,
@@ -355,8 +363,8 @@ class ScikitLearnMNIST:
                             help="graine  choisis pour la génération aléatoire")
         args = vars(parser.parse_args())
         X_train, X_test, y_train, y_test = self.get_data(order=args["order"])
-        error= {}
-        #____________-Entrainement de l'I.A.-____________#
+        error = {}
+        # ____________-Entrainement de l'I.A.-____________#
         for name in sorted(args["classifiers"]):
             print("Training %s ... " % name, end="")
             estimator = ESTIMATORS[name]
@@ -375,11 +383,10 @@ class ScikitLearnMNIST:
 
         return estimator
 
-
     def get_model(self):
         try:
             model = self._get_from_file()
-            #print("Loaded model from file")
+            # print("Loaded model from file")
         except FileNotFoundError as e:
             print(f"Couldn't load model from file with error {e}, compiling and saving model")
             model = self._get_from_compile()
@@ -387,28 +394,47 @@ class ScikitLearnMNIST:
         return model
 
     def predict(self, image):
-        estimator= self.get_model()
-        Image=image.reshape(1,784)
-        Image=Image/255
+        estimator = self.get_model()
+        Image = image.reshape(1, 784)
+        Image = Image / 255
         plt.imshow(image)
         plt.show()
-        r = estimator.predict(Image)#► entrainer avec 10000 image en 784
-        self.explainLIME(estimator,image,int(r))
+        r = estimator.predict(Image)  # ► entrainer avec 10000 image en 784
+        self.explainLIME(estimator, image, int(r))
         return str(int(r[0]))
-    def explainLIME(self,model,image,estim):
 
-        rgbim=np.zeros((28,28,3), 'uint8')
-        rgbim[...,0]=image
-        rgbim[...,1]=image
-        rgbim[...,2]=image
-        plt.plot(rgbim[0],rgbim[1])
-        explainer = lime_image.LimeImageExplainer(verbose = False)
-        segmenter = SegmentationAlgorithm('quickshift', kernel_size=1, max_dist=200, ratio=0.2)
-        explanation = explainer.explain_instance(rgbim, classifier_fn = model.predict_proba, top_labels=10,
-                                                 hide_color=0, num_samples=10000, segmentation_fn=segmenter)
-        temp, mask = explanation.get_image_and_mask(estim, positive_only=True, num_features=10, hide_rest=False, min_weight = 0.01)
-        fig, ax1 = plt.subplots(1,1)
-        ax1.imshow(label2rgb(mask,temp, bg_label = 0), interpolation = 'nearest')
+    def explainLIME(self, model, image, estim):
+
+        makegray_step = PipeStep(lambda img_list: [rgb2gray(img) for img in img_list])
+        flatten_step = PipeStep(lambda img_list: [img.ravel() for img in img_list])
+
+        simple_rf_pipeline = Pipeline([
+            ('Make Gray', makegray_step),
+            ('Flatten Image', flatten_step),
+            ('Normalize', Normalizer()),
+            # ('PCA', PCA(16)),
+            ('RF', RandomForestClassifier())
+        ])
+        mnist = fetch_mldata('MNIST original')
+        X_vec = np.stack([gray2rgb(iimg) for iimg in mnist.data.reshape((-1, 28, 28))], 0)
+        y_vec = mnist.target.astype(np.uint8)
+
+        X_train, X_test, y_train, y_test = train_test_split(X_vec, y_vec,
+                                                            train_size=0.55)
+        simple_rf_pipeline.fit(X_train, y_train)
+
+        rgbim = np.zeros((28, 28, 3), 'uint8')
+        rgbim[..., 0] = image
+        rgbim[..., 1] = image
+        rgbim[..., 2] = image
+        plt.plot(rgbim[0], rgbim[1])
+        explainer = lime_image.LimeImageExplainer(verbose=False)
+        #segmenter = SegmentationAlgorithm('quickshift', kernel_size=1, max_dist=200, ratio=0.2)
+        explanation = explainer.explain_instance(rgbim, classifier_fn=simple_rf_pipeline.predict_proba, top_labels=10,
+                                                 hide_color=0, num_samples=10000)#, segmentation_fn=segmenter)
+        temp, mask = explanation.get_image_and_mask(estim, positive_only=True, num_features=10, hide_rest=False, min_weight=0.01)
+        fig, ax1 = plt.subplots(1, 1)
+        ax1.imshow(label2rgb(mask, temp, bg_label=0), interpolation='nearest')
         ax1.set_title('positiv region for: {}'.format(estim))
         plt.show()
 
@@ -427,16 +453,15 @@ class RandomMNIST:
         return str(random.randint(0, 9))
 
 
-
 if __name__ == '__main__':
-    #e = KerasMNIST()
-    #e.explain(load_data.load_image("dataset/training/8/0001.png"), )
+    # e = KerasMNIST()
+    # e.explain(load_data.load_image("dataset/training/8/0001.png"), )
     classifiers = [
-        #KerasMNIST(),
-        #ScikitLearnMNIST(),
-        #RandomMNIST(),
+        # KerasMNIST(),
+        ScikitLearnMNIST(),
+        # RandomMNIST(),
 
-        #KerasMNISTLimeExplainer()
+        # KerasMNISTLimeExplainer()
     ]
 
     total_tests = 0
@@ -446,30 +471,30 @@ if __name__ == '__main__':
         FOLDER = f"dataset/testing/{i}/"
         for image_file in [f for f in listdir(FOLDER) if isfile(join(FOLDER, f))]:
             total_tests += 1
-            #print(f"{i}/{image_file}")
+            # print(f"{i}/{image_file}")
             image = load_data.load_image(f"{FOLDER}/{image_file}")
             for classifier in classifiers:
                 r = int(classifier.predict(image))
                 answers[classifier] += int(r == i)
-                #print("chiffre detecté: " + str(r))
-                #print(f"{type(classifier).__name__} > good={r == i} (r={r}, i={i})")
+                # print("chiffre detecté: " + str(r))
+                # print(f"{type(classifier).__name__} > good={r == i} (r={r}, i={i})")
 
-                if r!=i and isinstance(classifier, KerasMNIST):
+                if r != i and isinstance(classifier, KerasMNIST):
                     save_to = f'{i}_{image_file[:-4]}_{r}.png'
                     print(f"ERROR! Saving to {save_to}")
 
                     classifier.explain(image, save_to)
 
-                    #thread = Thread(target=classifier.explain, args=(image, save_to,))
-                    #thread.start()
+                    # thread = Thread(target=classifier.explain, args=(image, save_to,))
+                    # thread.start()
 
-                    #threads.append(thread)
+                    # threads.append(thread)
 
-                #print(f"{type(classifier).__name__} > good={r == i} (r={r}, i={i})")
+                # print(f"{type(classifier).__name__} > good={r == i} (r={r}, i={i})")
 
-    #for thread in threads:
+    # for thread in threads:
     #    thread.join()
 
     for classifier, good in answers.items():
         print(
-            f"{type(classifier).__name__} > Gave {good} good answers out of {total_tests} answers. ({good/total_tests*100} %)")
+            f"{type(classifier).__name__} > Gave {good} good answers out of {total_tests} answers. ({good / total_tests * 100} %)")
