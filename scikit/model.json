@@ -1,0 +1,1 @@
+{"classifiers": ["ExtraTrees", "Nystroem-SVM"], "n_jobs": 1, "order": "C", "random_seed": 0}

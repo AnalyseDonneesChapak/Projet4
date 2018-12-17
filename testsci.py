@@ -112,7 +112,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--classifiers', nargs="+",
                         choices=ESTIMATORS, type=str,
-                        default=['ExtraTrees', 'Nystroem-SVM'],
+                        default=['MLP-adam', 'Nystroem-SVM'],
                         help="list of classifiers to benchmark.")
     parser.add_argument('--n-jobs', nargs="?", default=1, type=int,
                         help="Number of concurrently running workers for "
