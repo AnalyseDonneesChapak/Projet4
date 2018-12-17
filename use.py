@@ -1,46 +1,38 @@
 import random
-
 import numpy as np
-
 np.random.seed(123)  # for reproducibility
+import matplotlib.pyplot as plt
+import argparse
+import shap
+
 
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.models import model_from_json
 from keras.datasets import mnist
-import os,sys
 from os import listdir
 from os.path import join, isfile
 from numpy_vectors import load_data
-from time import time
-import argparse
-from joblib import Memory
-from skimage.transform import resize
 from sklearn.externals import joblib
 from sklearn.datasets import fetch_mldata
-from sklearn.datasets import get_data_home
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.kernel_approximation import Nystroem
 from sklearn.kernel_approximation import RBFSampler
 from sklearn.metrics import zero_one_loss
-from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline, Pipeline
-from sklearn.preprocessing import Normalizer
 from sklearn.svm import LinearSVC, SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils import check_array
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
-import matplotlib.pyplot as plt
-from skimage.color import gray2rgb, rgb2gray, label2rgb
-import lime
 from lime import lime_image
 from lime.wrappers.scikit_image import SegmentationAlgorithm
-from PIL import Image
-#import shap
+from skimage.color import gray2rgb, rgb2gray, label2rgb  # since the code wants color images
+
+
 class PipeStep(object):
     """
     Wrapper for turning functions into pipeline transforms (no-fitting)
@@ -51,6 +43,7 @@ class PipeStep(object):
         return self
     def transform(self,X):
         return self._step_func(X)
+
 class KerasMNIST:
     def __init__(self):
         self.model = self.get_model()
@@ -91,7 +84,7 @@ class KerasMNIST:
         loaded_model.load_weights("keras/model.h5")
 
         loaded_model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-        score = loaded_model.evaluate(X_test, Y_test, verbose=1)
+        score = loaded_model.evaluate(X_test, Y_test, verbose=0)
 
         print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1] * 100))
 
@@ -130,7 +123,7 @@ class KerasMNIST:
 
         # 9. Fit model on training data
         model.fit(X_train, Y_train,
-                  batch_size=32, epochs=10, verbose=1)
+                  batch_size=32, epochs=10, verbose=0)
 
         # 10. Evaluate model on test data
         # score = model.evaluate(X_test, Y_test, verbose=1)
@@ -156,8 +149,8 @@ class KerasMNIST:
         # plt.plot(self.model.predict)
         return str(r_list[0].index(max(r_list[0])))
 
-    def explain(self, image):
-        X_train, Y_train, X_test, Y_test = self.get_data()
+    def explain(self, image, save_to=None):
+
 
         # select a set of background examples to take an expectation over
         # i = np.expand_dims(image, axis=0)
@@ -165,12 +158,22 @@ class KerasMNIST:
         #
         # background = i
         # explain prediction on the model
+        X_train, Y_train, X_test, Y_test = self.get_data()
         background = X_train[np.random.choice(X_train.shape[0], 100, replace=False)]
-        image = image.reshape(1,28,28,1)
+
         e = shap.DeepExplainer(self.model, background)
+
+        image = image.reshape(1, 28, 28, 1)
+
         shap_values = e.shap_values(image)
         #plot the feature attributions
-        shap.image_plot(shap_values, -image)
+        plt.close('all')
+        shap.image_plot(shap_values, -image, show=False)
+        if save_to:
+            plt.savefig(save_to)
+        else:
+            plt.show()
+
         return True
 
 
@@ -279,9 +282,6 @@ class KerasMNISTLimeExplainer(KerasMNIST):
         return 5
 
 
-
-
-
 class ScikitLearnMNIST:
     def __init__(self):
         self.model = self.get_model()
@@ -317,7 +317,7 @@ class ScikitLearnMNIST:
         data = fetch_mldata('MNIST original')
         X = check_array(data['data'], dtype=dtype, order=order)
         y = data["target"]
-    
+
         # Normalize features
         X = X / 255
         print("Creating train-test split...")
@@ -326,7 +326,7 @@ class ScikitLearnMNIST:
         y_train = y[:n_train]
         X_test = X[n_train:]
         y_test = y[n_train:]
-    
+
         return X_train, X_test, y_train, y_test
 
     def _save_to_file(self, model):
@@ -361,21 +361,21 @@ class ScikitLearnMNIST:
             print("Training %s ... " % name, end="")
             estimator = ESTIMATORS[name]
             estimator_params = estimator.get_params()
-    
+
             estimator.set_params(**{p: args["random_seed"]
                                     for p in estimator_params
                                     if p.endswith("random_state")})
-    
+
             if "n_jobs" in estimator_params:
                 estimator.set_params(n_jobs=args["n_jobs"])
-    
+
             estimator.fit(X_train, y_train)
             y_pred = estimator.predict(X_test)
             error[name] = zero_one_loss(y_test, y_pred)
 
         return estimator
-    
-        
+
+
     def get_model(self):
         try:
             model = self._get_from_file()
@@ -388,7 +388,7 @@ class ScikitLearnMNIST:
 
     def predict(self, image):
         estimator= self.get_model()
-        Image=image.reshape(1,784) 
+        Image=image.reshape(1,784)
         Image=Image/255
         plt.imshow(image)
         plt.show()
@@ -411,8 +411,8 @@ class ScikitLearnMNIST:
         ax1.imshow(label2rgb(mask,temp, bg_label = 0), interpolation = 'nearest')
         ax1.set_title('positiv region for: {}'.format(estim))
         plt.show()
-        
-        
+
+
 class RandomMNIST:
     def __init__(self):
         pass
@@ -430,10 +430,10 @@ class RandomMNIST:
 
 if __name__ == '__main__':
     #e = KerasMNIST()
-    #e.explain(load_data.load_image("dataset/training/9/0001.png"), )
+    #e.explain(load_data.load_image("dataset/training/8/0001.png"), )
     classifiers = [
         #KerasMNIST(),
-        ScikitLearnMNIST(),
+        #ScikitLearnMNIST(),
         #RandomMNIST(),
 
         #KerasMNISTLimeExplainer()
@@ -441,6 +441,7 @@ if __name__ == '__main__':
 
     total_tests = 0
     answers = {c: 0 for c in classifiers}
+    threads = []
     for i in range(10):
         FOLDER = f"dataset/testing/{i}/"
         for image_file in [f for f in listdir(FOLDER) if isfile(join(FOLDER, f))]:
@@ -452,6 +453,23 @@ if __name__ == '__main__':
                 answers[classifier] += int(r == i)
                 #print("chiffre detecté: " + str(r))
                 #print(f"{type(classifier).__name__} > good={r == i} (r={r}, i={i})")
+
+                if r!=i and isinstance(classifier, KerasMNIST):
+                    save_to = f'{i}_{image_file[:-4]}_{r}.png'
+                    print(f"ERROR! Saving to {save_to}")
+
+                    classifier.explain(image, save_to)
+
+                    #thread = Thread(target=classifier.explain, args=(image, save_to,))
+                    #thread.start()
+
+                    #threads.append(thread)
+
+                #print(f"{type(classifier).__name__} > good={r == i} (r={r}, i={i})")
+
+    #for thread in threads:
+    #    thread.join()
+
     for classifier, good in answers.items():
         print(
             f"{type(classifier).__name__} > Gave {good} good answers out of {total_tests} answers. ({good/total_tests*100} %)")
